@@ -72,7 +72,7 @@ npm run electron:dev
 ## 📂 项目结构
 
 ```
-decrypt/
+ByteAlchemy/
 ├── run.py                 # 一键启动脚本
 ├── backend/               # FastAPI 服务端 (Python)
 ├── core/                  # 加解密核心算法库 (Python)
@@ -94,6 +94,7 @@ decrypt/
 ---
 **版本**: 0.0.1
 **作者**: QAQ
+
 
 
 
