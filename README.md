@@ -1,4 +1,4 @@
-# ByteAlchemy - 现代化极客加解密工具
+<img width="1402" height="901" alt="image" src="https://github.com/user-attachments/assets/b117b48a-4fc0-4d7b-ab0b-cd2d498b6c43" /><img width="1402" height="900" alt="image" src="https://github.com/user-attachments/assets/4c84b710-0fb0-46d5-8ed2-dc9a980ed8d6" /># ByteAlchemy - 现代化极客加解密工具
 
 ## QAQ的自言自语
 
@@ -6,6 +6,13 @@
 诶正好白嫖了gemini pro 那就下一个 antigravity 自己搓一个吧
 
 整个项目是用了 `electron + vue3 + fastapi + uvicorn` 的形式 调用了element-plus的部分组件，然后decoder部分借鉴了一下cyberchef的布局
+我放一点小插图
+<img width="1402" height="900" alt="image" src="https://github.com/user-attachments/assets/b765b7e0-5347-488f-b14e-5b4f410871a9" />
+<img width="1402" height="901" alt="image" src="https://github.com/user-attachments/assets/918b045f-2df0-4435-989a-4d90d16fb438" />
+<img width="1426" height="939" alt="image" src="https://github.com/user-attachments/assets/c979eda0-659a-49ae-8865-7d3755f944ed" />
+
+加密好像有点问题来着，但是解密没出错就不管他啦 ciscn那道流量的密钥是 `ac46fb610b313b4f32fc642d8834b456"` 密文我丢项目里 感兴趣的可以试试
+
 
 好啦 接下来的介绍就交给AI吧
 
@@ -88,3 +95,4 @@ decrypt/
 ---
 **版本**: 0.0.1
 **作者**: QAQ
+
