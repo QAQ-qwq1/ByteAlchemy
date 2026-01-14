@@ -1,6 +1,6 @@
 {
   "name": "byte-alchemy",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "一个基于 Electron + Vue 3 + Element Plus 的现代化图形化编解码工具，界面风格模仿 CyberChef。",
   "main": "electron/main.js",
   "scripts": {
