@@ -1,5 +1,14 @@
 # ByteAlchemy - 现代化极客加解密工具
 
+## QAQ的自言自语
+
+其实我更愿意叫他ctf的奇怪小工具，写这个玩意儿的起因是前两天的ciscn由于不会写解密脚本啊逆向和流量的最后一个SM4差点就寄啦，还好队里有大手子带我躺。然后网上又找不到好用的工具 cyberchef 又只能对标准的加密算法进行操作，
+诶正好白嫖了gemini pro 那就下一个 antigravity 自己搓一个吧
+
+整个项目是用了 `electron + vue3 + fastapi + uvicorn` 的形式 调用了element-plus的部分组件，然后decoder部分借鉴了一下cyberchef的布局
+
+好啦 接下来的介绍就交给AI吧
+
 **ByteAlchemy** 是一款基于 **Electron + Vue 3** 构建的现代化图形化调试工具，后端由 **Python FastAPI** 驱动。它采用了类似 **CyberChef** 的“操作链”设计理念，旨在为安全研究人员和开发者提供便捷、直观的编码与加解密验证体验。
 
 ## ✨ 核心特性
@@ -68,6 +77,11 @@ decrypt/
 - **Shell**: Electron
 - **Backend**: Python 3, FastAPI, Uvicorn, PyCryptodome
 
+## 最后的碎碎念
+第一次写开源工具，问题还是有点小多啊，还是希望大家多多包涵（这玩意儿我都感觉不大好用说是）
+然后目前是 `decoder+formatter+regex` 嘛后面我想加入一个调用hashcat之类的工具的板块，这些玩意儿总是记不住指令
+诶再加一个自定义的解密脚本库 嘿嘿嘿。
+
 ---
-**版本**: 2.0.0 (Electron Refactor)  
+**版本**: 0.0.1
 **作者**: QAQ
