@@ -7,3 +7,4 @@ python-dist/
 build/
 *.spec
 releasenote.md
+core/script/user_scripts/*
