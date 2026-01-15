@@ -7,4 +7,6 @@ python-dist/
 build/
 *.spec
 releasenote.md
+__pycache__/
+*.pyc
 core/script/user_scripts/*
