@@ -414,7 +414,97 @@ def delete_sbox(name: str):
         return {"status": "success"}
     raise HTTPException(status_code=403, detail="Cannot delete standard S-Box or item not found")
 
+# ==========================================
+# Script Library APIs
+# ==========================================
+from core.script import ScriptManager
+from starlette.responses import StreamingResponse
+
+script_manager = ScriptManager()
+
+class ScriptCreateRequest(BaseModel):
+    name: str
+    content: str
+    description: str = ""
+
+class ScriptUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    content: Optional[str] = None
+    description: Optional[str] = None
+
+@app.get("/api/scripts")
+def list_scripts():
+    """获取所有脚本列表"""
+    return {"scripts": script_manager.list_scripts()}
+
+@app.post("/api/scripts")
+def create_script(req: ScriptCreateRequest):
+    """上传新脚本"""
+    try:
+        result = script_manager.add_script(req.name, req.content, req.description)
+        return {"status": "success", "script": result}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/scripts/{script_id}")
+def get_script(script_id: str):
+    """获取脚本详情"""
+    script = script_manager.get_script(script_id)
+    if script is None:
+        raise HTTPException(status_code=404, detail="Script not found")
+    return {"script": script}
+
+@app.put("/api/scripts/{script_id}")
+def update_script(script_id: str, req: ScriptUpdateRequest):
+    """更新脚本"""
+    try:
+        result = script_manager.update_script(
+            script_id, 
+            name=req.name, 
+            content=req.content, 
+            description=req.description
+        )
+        if result is None:
+            raise HTTPException(status_code=404, detail="Script not found")
+        return {"status": "success", "script": result}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.delete("/api/scripts/{script_id}")
+def delete_script(script_id: str):
+    """删除脚本"""
+    if script_manager.delete_script(script_id):
+        return {"status": "success"}
+    raise HTTPException(status_code=404, detail="Script not found")
+
+@app.post("/api/scripts/{script_id}/run")
+def run_script(script_id: str):
+    """运行脚本并返回完整输出"""
+    try:
+        result = script_manager.run_script_sync(script_id)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/scripts/{script_id}/run-stream")
+def run_script_stream(script_id: str):
+    """运行脚本并流式返回输出 (SSE)"""
+    def generate():
+        for line in script_manager.run_script(script_id):
+            yield f"data: {line}\n\n"
+        yield "event: done\ndata: done\n\n"
+    
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive"
+        }
+    )
+
 if __name__ == "__main__":
     # Electron will likely spawn this process. 
     # Using specific port 3333 to avoid conflicts (configurable)
     uvicorn.run(app, host="0.0.0.0", port=3333)
+

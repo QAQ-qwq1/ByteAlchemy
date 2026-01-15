@@ -1,5 +1,9 @@
 node_modules
-
 .venv
-
-release/
+build
+release
+python-dist
+python-dist/
+build/
+*.spec
+releasenote.md

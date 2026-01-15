@@ -41,29 +41,27 @@ const PY_PORT = 3333
 function startBackend() {
     console.log('Starting Python backend...')
 
-    const scriptPath = path.join(__dirname, '../backend/server.py')
-    let pythonPath = 'python3' // Default fallback
+    let backendExecutable
+    let args = []
 
     if (isDev) {
-        pythonPath = path.join(__dirname, '../.venv/bin/python')
+        // Development mode: Run from script using virtual environment
+        const pythonPath = path.join(__dirname, '../.venv/bin/python')
+        const scriptPath = path.join(__dirname, '../backend/server.py')
+        backendExecutable = pythonPath
+        args = [scriptPath]
+        console.log(`Development mode detected. Using python path: ${pythonPath}`)
     } else {
-        // In packaged app, we might expect the user to have python3 or python
-        // Or we could have bundled it, but for now we rely on system python
-        pythonPath = 'python3'
+        // Packaged mode: Run the bundled executable
+        // The binary is placed in resources/backend-server/backend-server
+        backendExecutable = path.join(process.resourcesPath, 'backend-server/backend-server')
+        console.log(`Packaged mode detected. Using executable: ${backendExecutable}`)
     }
 
-    console.log(`Using python path: ${pythonPath}`)
-
-    backendProcess = spawn(pythonPath, [scriptPath])
+    backendProcess = spawn(backendExecutable, args)
 
     backendProcess.on('error', (err) => {
-        if (err.code === 'ENOENT' && pythonPath === 'python3') {
-            console.log('python3 not found, trying python...')
-            pythonPath = 'python'
-            backendProcess = spawn(pythonPath, [scriptPath])
-        } else {
-            console.error('Failed to start backend process:', err)
-        }
+        console.error('Failed to start backend process:', err)
     })
 
     backendProcess.stdout.on('data', (data) => {

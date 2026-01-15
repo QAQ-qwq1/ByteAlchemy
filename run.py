@@ -4,6 +4,12 @@ import sys
 import subprocess
 import time
 import signal
+import threading
+
+def run_terminal_server(python_exe, base_dir):
+    """在单独线程中启动终端WebSocket服务器"""
+    terminal_script = os.path.join(base_dir, "core", "script", "terminal_server.py")
+    subprocess.Popen([python_exe, terminal_script])
 
 def run():
     # 1. Start Backend
@@ -22,7 +28,12 @@ def run():
     backend_script = os.path.join(base_dir, "backend", "server.py")
     backend_proc = subprocess.Popen([python_exe, backend_script])
 
-    # 2. Wait for backend to start
+    # 1.5. Start Terminal WebSocket Server
+    print("Starting terminal server...")
+    terminal_script = os.path.join(base_dir, "core", "script", "terminal_server.py")
+    terminal_proc = subprocess.Popen([python_exe, terminal_script])
+
+    # 2. Wait for servers to start
     time.sleep(2)
 
     # 3. Start Frontend (Electron)
@@ -46,6 +57,8 @@ def run():
     finally:
         # Cleanup
         backend_proc.terminate()
+        if 'terminal_proc' in locals():
+            terminal_proc.terminate()
         if 'frontend_proc' in locals():
             frontend_proc.terminate()
 

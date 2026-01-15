@@ -82,14 +82,19 @@ ByteAlchemy/
 ```
 
 ## 🛠️ 技术栈
-- **Frontend**: Vue 3, Vite, Element Plus, Axios, Vuedraggable
+- **Frontend**: Vue 3, Vite, Element Plus, Axios, Vuedraggable, xterm.js
 - **Shell**: Electron
-- **Backend**: Python 3, FastAPI, Uvicorn, PyCryptodome
+- **Backend**: Python 3, FastAPI, Uvicorn, PyCryptodome, WebSockets
+
+### 6. 🖥️ 脚本库与交互式终端 (NEW!)
+- **自定义脚本**：上传和管理自己的Python脚本库
+- **一键执行**：点击脚本卡片即可快速运行
+- **交互式终端**：完整的bash终端，支持输入任何命令
+- **实时输出**：查看脚本执行结果和错误信息
 
 ## 最后的碎碎念
 第一次写开源工具，问题还是有点小多啊，还是希望大家多多包涵（这玩意儿我都感觉不大好用说是）
-然后目前是 `decoder+formatter+regex` 嘛后面我想加入一个调用hashcat之类的工具的板块，这些玩意儿总是记不住指令
-诶再加一个自定义的解密脚本库 嘿嘿嘿。
+然后目前是 `decoder+formatter+regex+script` 嘛后面我想加入一个调用hashcat之类的工具的板块，这些玩意儿总是记不住指令
 
 ---
 **版本**: 0.0.1

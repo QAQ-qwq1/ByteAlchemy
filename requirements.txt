@@ -4,3 +4,5 @@ pydantic
 pycryptodome
 starlette
 requests
+websockets
+ptyprocess

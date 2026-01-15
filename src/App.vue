@@ -5,6 +5,7 @@ import Sidebar from '@/components/Sidebar.vue'
 import DecoderPage from '@/views/DecoderPage.vue'
 import FormatterPage from '@/views/FormatterPage.vue'
 import RegexPage from '@/views/RegexPage.vue'
+import ScriptPage from '@/views/ScriptPage.vue'
 import SettingsPage from '@/views/SettingsPage.vue'
 
 const currentPage = ref('decoder')
@@ -13,6 +14,7 @@ const renderPage = {
     'decoder': DecoderPage,
     'formatter': FormatterPage,
     'regex': RegexPage,
+    'script': ScriptPage,
     'settings': SettingsPage
 }
 </script>
