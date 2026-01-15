@@ -193,8 +193,9 @@ class ScriptManager:
         yield f"$ python {info['filename']}\n"
         
         try:
+            # Use sys.executable for cross-platform compatibility
             process = subprocess.Popen(
-                ['python', str(filepath)],
+                [sys.executable, str(filepath)],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,

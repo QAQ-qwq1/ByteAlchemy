@@ -506,5 +506,5 @@ def run_script_stream(script_id: str):
 if __name__ == "__main__":
     # Electron will likely spawn this process. 
     # Using specific port 3333 to avoid conflicts (configurable)
-    uvicorn.run(app, host="0.0.0.0", port=3333)
+    uvicorn.run(app, host="0.0.0.0", port=3335)
 

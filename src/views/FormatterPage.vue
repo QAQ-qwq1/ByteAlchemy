@@ -19,7 +19,7 @@ const formatOptions = [
 
 const format = async () => {
     try {
-        const response = await axios.post('http://127.0.0.1:3333/api/format', {
+        const response = await axios.post('http://127.0.0.1:3335/api/format', {
             type: selectedMode.value,
             data: inputContent.value
         })

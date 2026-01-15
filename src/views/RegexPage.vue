@@ -20,7 +20,7 @@ const escapeResult = ref('')
 
 const generate = async () => {
     try {
-        const response = await axios.post('http://127.0.0.1:3333/api/regex/generate', {
+        const response = await axios.post('http://127.0.0.1:3335/api/regex/generate', {
             include_digits: includeDigits.value,
             include_lower: includeLower.value,
             include_upper: includeUpper.value,
@@ -37,7 +37,7 @@ const generate = async () => {
 
 const escape = async () => {
     try {
-        const response = await axios.post('http://127.0.0.1:3333/api/regex/escape', {
+        const response = await axios.post('http://127.0.0.1:3335/api/regex/escape', {
             data: escapeInput.value
         })
         escapeResult.value = response.data.result

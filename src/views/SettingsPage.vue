@@ -30,7 +30,7 @@ const sboxGrid = computed(() => {
 
 const loadSboxNames = async (retries = 5) => {
     try {
-        const response = await axios.get('http://127.0.0.1:3333/api/sbox/names')
+        const response = await axios.get('http://127.0.0.1:3335/api/sbox/names')
         sboxNames.value = response.data.names
         if (sboxNames.value.length > 0 && !selectedName.value) {
             selectSbox(sboxNames.value[0])
@@ -46,7 +46,7 @@ const loadSboxNames = async (retries = 5) => {
 const selectSbox = async (name) => {
     selectedName.value = name
     try {
-        const response = await axios.get(`http://127.0.0.1:3333/api/sbox/get/${encodeURIComponent(name)}`)
+        const response = await axios.get(`http://127.0.0.1:3335/api/sbox/get/${encodeURIComponent(name)}`)
         currentName.value = response.data.name
         currentContent.value = response.data.content
         isStandard.value = response.data.is_standard
@@ -73,7 +73,7 @@ const cloneSbox = () => {
 const saveSbox = async () => {
     if (!currentName.value) return ElMessage.warning("名称不能为空")
     try {
-        await axios.post('http://127.0.0.1:3333/api/sbox/save', {
+        await axios.post('http://127.0.0.1:3335/api/sbox/save', {
             name: currentName.value,
             content: currentContent.value
         })
@@ -95,7 +95,7 @@ const deleteSbox = async () => {
             type: 'warning'
         })
         
-        await axios.delete(`http://127.0.0.1:3333/api/sbox/delete/${encodeURIComponent(selectedName.value)}`)
+        await axios.delete(`http://127.0.0.1:3335/api/sbox/delete/${encodeURIComponent(selectedName.value)}`)
         ElMessage.success("删除成功")
         await loadSboxNames()
         if (sboxNames.value.length > 0) selectSbox(sboxNames.value[0])

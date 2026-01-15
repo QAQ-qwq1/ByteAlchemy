@@ -2,6 +2,7 @@
 const { app, BrowserWindow } = require('electron')
 const path = require('path')
 const { spawn } = require('child_process')
+const fs = require('fs')
 
 let mainWindow
 let backendProcess
@@ -36,7 +37,7 @@ function createWindow() {
 }
 
 const PY_HOST = '127.0.0.1'
-const PY_PORT = 3333
+const PY_PORT = 3335
 
 function startBackend() {
     console.log('Starting Python backend...')
@@ -46,11 +47,26 @@ function startBackend() {
 
     if (isDev) {
         // Development mode: Run from script using virtual environment
-        const pythonPath = path.join(__dirname, '../.venv/bin/python')
+        // Cross-platform: Windows uses Scripts/python.exe, Unix uses bin/python
+        const isWin = process.platform === 'win32'
+        const venvPythonPath = isWin
+            ? path.join(__dirname, '../.venv/Scripts/python.exe')
+            : path.join(__dirname, '../.venv/bin/python')
+
+        // Fallback to system Python if venv doesn't exist
+        let pythonPath
+        if (fs.existsSync(venvPythonPath)) {
+            pythonPath = venvPythonPath
+            console.log(`Using venv Python: ${pythonPath}`)
+        } else {
+            pythonPath = isWin ? 'python' : 'python3'
+            console.log(`Venv not found, using system Python: ${pythonPath}`)
+        }
+
         const scriptPath = path.join(__dirname, '../backend/server.py')
         backendExecutable = pythonPath
         args = [scriptPath]
-        console.log(`Development mode detected. Using python path: ${pythonPath}`)
+        console.log(`Development mode detected (${process.platform}).`)
     } else {
         // Packaged mode: Run the bundled executable
         // The binary is placed in resources/backend-server/backend-server

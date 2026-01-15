@@ -58,6 +58,19 @@
         "dir"
       ],
       "category": "Utility"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "dir"
+      ],
+      "category": "public.app-category.utilities"
     }
   }
 }

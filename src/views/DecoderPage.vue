@@ -38,7 +38,7 @@ const palette = [
 // --- Logic ---
 const loadSboxNames = async (retries = 5) => {
     try {
-        const response = await axios.get('http://127.0.0.1:3333/api/sbox/names')
+        const response = await axios.get('http://127.0.0.1:3335/api/sbox/names')
         sboxNames.value = response.data.names
     } catch (error) { 
         console.error("Load SBox Names failed, retrying...", error)
@@ -78,7 +78,7 @@ const executeRecipe = async () => {
         }
 
         if (!skipConversion && (inputFormat.value !== 'UTF-8' || hexSeparator.value !== '无分隔符')) {
-             const conv = await axios.post('http://127.0.0.1:3333/api/utils/convert_format', {
+             const conv = await axios.post('http://127.0.0.1:3335/api/utils/convert_format', {
                  data: currentInput,
                  from_fmt: inputFormat.value,
                  to_fmt: 'UTF-8',
@@ -98,7 +98,7 @@ const executeRecipe = async () => {
             return op
         })
 
-        const response = await axios.post('http://127.0.0.1:3333/api/pipeline/run', {
+        const response = await axios.post('http://127.0.0.1:3335/api/pipeline/run', {
             data: currentInput,
             operations: operations
         })
@@ -106,7 +106,7 @@ const executeRecipe = async () => {
 
         // 3. Convert Output Format
         if (outputFormat.value !== 'UTF-8') {
-            const conv = await axios.post('http://127.0.0.1:3333/api/utils/convert_format', {
+            const conv = await axios.post('http://127.0.0.1:3335/api/utils/convert_format', {
                  data: result,
                  from_fmt: 'UTF-8',
                  to_fmt: outputFormat.value
@@ -120,7 +120,7 @@ const executeRecipe = async () => {
         console.error("Execute Recipe Error:", error)
         outputData.value = `[Error] ${error.response?.data?.detail || error.message}`
         if (error.message === 'Network Error') {
-            outputData.value += " (Check if Python backend is running on 127.0.0.1:3333)"
+            outputData.value += " (Check if Python backend is running on 127.0.0.1:3335)"
         }
         ElMessage.error('执行出错')
     }
@@ -129,7 +129,7 @@ const executeRecipe = async () => {
 const toggleEndian = async () => {
     try {
         isBigEndian.value = !isBigEndian.value
-        const response = await axios.post('http://127.0.0.1:3333/api/utils/endian_swap', {
+        const response = await axios.post('http://127.0.0.1:3335/api/utils/endian_swap', {
             data: inputData.value,
             from_fmt: inputFormat.value,
             to_fmt: '', // ignored for swap

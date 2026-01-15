@@ -28,8 +28,8 @@ const newScript = ref({
 })
 
 // --- API Base ---
-const API_BASE = 'http://127.0.0.1:3333'
-const WS_BASE = 'ws://127.0.0.1:3334'
+const API_BASE = 'http://127.0.0.1:3335'
+const WS_BASE = 'ws://127.0.0.1:3336'
 
 // --- Terminal Functions ---
 const initTerminal = () => {
@@ -222,8 +222,9 @@ const runScript = (script) => {
     // 获取脚本完整路径并在终端中执行
     currentRunningScript.value = script.id
     
-    // 发送执行命令到终端
-    const cmd = `python /home/qaq/decrypt/core/script/user_scripts/${script.id}.py`
+    // 使用相对路径执行脚本 (core/script/user_scripts/)
+    // 在终端的当前工作目录下执行
+    const cmd = `python core/script/user_scripts/${script.id}.py`
     websocket.send(`CMD:${cmd}`)
     
     setTimeout(() => {

@@ -46,10 +46,7 @@
 
 ## 🚀 快速开始
 
-本项目已完成封装，支持在仅有 Python 环境的系统下运行（无需预装 Node.js）。
-本项目已完成封装，支持在仅有 Python 环境的系统下运行（无需预装 Node.js）。
-但由于是linux环境开发的，切换到windows下可能还是需要使用 `npm install` + `npm run build` 重新编译一下
-（因为我在windows上跑的时候报错了，说是找不到electron）
+本项目支持 **Windows** 和 **Linux/macOS** 双平台运行。
 
 ### 1. 安装 Python 依赖
 ```bash
@@ -89,7 +86,7 @@ ByteAlchemy/
 ### 6. 🖥️ 脚本库与交互式终端 (NEW!)
 - **自定义脚本**：上传和管理自己的Python脚本库
 - **一键执行**：点击脚本卡片即可快速运行
-- **交互式终端**：完整的bash终端，支持输入任何命令
+- **跨平台终端**：Windows 使用 PowerShell，Linux/macOS 使用 bash
 - **实时输出**：查看脚本执行结果和错误信息
 
 ## 最后的碎碎念
