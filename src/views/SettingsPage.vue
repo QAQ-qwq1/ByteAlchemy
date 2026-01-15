@@ -9,6 +9,12 @@ const currentName = ref('')
 const currentContent = ref('')
 const isStandard = ref(false)
 const isExpanded = ref(true)
+const isAppearanceExpanded = ref(true)
+
+// Appearance Settings
+const terminalWallpaper = ref('')
+const terminalOpacity = ref(0.3)
+const wallpaperPreview = ref('')
 
 // Parse currentContent into 16x16 grid
 const sboxGrid = computed(() => {
@@ -106,8 +112,64 @@ const deleteSbox = async () => {
     }
 }
 
+// --- Appearance Functions ---
+const handleWallpaperUpload = (file) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+        const result = e.target.result
+        // Basic size check (5MB limit)
+        if (result.length > 5 * 1024 * 1024 * 1.37) { // Base64 is ~37% larger
+             ElMessage.error('图片大小不能超过 5MB')
+             return
+        }
+        terminalWallpaper.value = result
+        wallpaperPreview.value = result
+        saveAppearanceSettings()
+    }
+    reader.readAsDataURL(file.raw)
+    return false
+}
+
+const removeWallpaper = () => {
+    terminalWallpaper.value = ''
+    wallpaperPreview.value = ''
+    saveAppearanceSettings()
+}
+
+const saveAppearanceSettings = () => {
+    try {
+        localStorage.setItem('terminal_bg_image', terminalWallpaper.value)
+        localStorage.setItem('terminal_bg_opacity', terminalOpacity.value)
+        // Dispatch event for other tabs/components
+        window.dispatchEvent(new Event('storage'))
+        ElMessage.success('外观设置已保存')
+    } catch (e) {
+        console.error("Save settings failed:", e)
+        if (e.name === 'QuotaExceededError') {
+             ElMessage.error('保存失败：图片太大超过了存储限制，请使用更小的图片')
+        } else {
+             ElMessage.error('保存设置失败')
+        }
+    }
+}
+
+const loadAppearanceSettings = () => {
+    const bg = localStorage.getItem('terminal_bg_image')
+    const opacity = localStorage.getItem('terminal_bg_opacity')
+    
+    if (bg) {
+        terminalWallpaper.value = bg
+        wallpaperPreview.value = bg
+    }
+    
+    if (opacity !== null) {
+        terminalOpacity.value = parseFloat(opacity)
+    }
+}
+
 onMounted(() => {
     loadSboxNames()
+    loadAppearanceSettings()
 })
 </script>
 
@@ -201,6 +263,62 @@ onMounted(() => {
                                 <el-button type="primary" @click="saveSbox" style="flex: 1">保存配置</el-button>
                                 <el-button type="danger" plain @click="deleteSbox">删除此配置</el-button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </el-card>
+
+
+
+        <el-card class="section-card" :body-style="{ padding: '0px' }">
+            <template #header>
+                <div class="section-header" @click="isAppearanceExpanded = !isAppearanceExpanded">
+                    <div class="header-left">
+                        <h2>终端外观 (Terminal Appearance)</h2>
+                    </div>
+                    <el-icon class="expand-icon" :style="{ transform: isAppearanceExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }">
+                         <ArrowDown />
+                    </el-icon>
+                </div>
+            </template>
+
+            <div class="sbox-editor-wrapper" :class="{ collapsed: !isAppearanceExpanded }" style="max-height: 500px">
+                <div class="appearance-editor">
+                    <div class="setting-item">
+                        <div class="setting-label">背景图片 (Wallpaper)</div>
+                        <div class="wallpaper-upload">
+                             <el-upload
+                                class="avatar-uploader"
+                                :show-file-list="false"
+                                :auto-upload="false"
+                                :on-change="handleWallpaperUpload"
+                                accept="image/*"
+                            >
+                                <img v-if="wallpaperPreview" :src="wallpaperPreview" class="avatar" />
+                                <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+                            </el-upload>
+                            <div class="upload-hint">
+                                <p>点击上传图片 (最大 5MB)</p>
+                                <el-button v-if="wallpaperPreview" type="danger" link @click.stop="removeWallpaper">清除壁纸</el-button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            背景不透明度 (Opacity)
+                            <span class="value-text">{{ Math.round(terminalOpacity * 100) }}%</span>
+                        </div>
+                        <div class="slider-container">
+                             <el-slider 
+                                v-model="terminalOpacity" 
+                                :min="0" 
+                                :max="1" 
+                                :step="0.05" 
+                                show-input
+                                @change="saveAppearanceSettings"
+                             />
                         </div>
                     </div>
                 </div>
@@ -416,6 +534,82 @@ h1 {
 .about-card {
     background: var(--panel-bg);
     border-color: var(--border-color);
+}
+
+.appearance-editor {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.setting-item {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.setting-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-color);
+    display: flex;
+    justify-content: space-between;
+}
+
+.value-text {
+    color: var(--el-color-primary);
+}
+
+.wallpaper-upload {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.avatar-uploader {
+    border: 1px dashed var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: var(--el-transition-duration-fast);
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-uploader:hover {
+    border-color: var(--el-color-primary);
+}
+
+.avatar-uploader-icon {
+    font-size: 28px;
+    color: #8c939d;
+    width: 120px;
+    height: 120px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar {
+    width: 120px;
+    height: 120px;
+    display: block;
+    object-fit: cover;
+}
+
+.upload-hint {
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+}
+
+.slider-container {
+    padding: 0 12px;
 }
 </style>
 

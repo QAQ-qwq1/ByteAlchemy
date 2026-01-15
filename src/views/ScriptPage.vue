@@ -12,6 +12,11 @@ const scripts = ref([])
 const loading = ref(false)
 const currentRunningScript = ref(null)
 
+// Theme & Wallpaper State
+const terminalBgImage = ref('')
+const terminalBgOpacity = ref(0.3)
+const terminalStyle = ref({})
+
 // Terminal State
 const terminalRef = ref(null)
 const isConnected = ref(false)
@@ -27,9 +32,71 @@ const newScript = ref({
     content: ''
 })
 
+// Run Dialog State
+const runDialogVisible = ref(false)
+const runningScriptInfo = ref(null)
+const scriptInputs = ref('')
+const scriptParams = ref([])
+const loadingScriptContent = ref(false)
+
 // --- API Base ---
 const API_BASE = 'http://127.0.0.1:3335'
 const WS_BASE = 'ws://127.0.0.1:3336'
+
+// --- Terminal Themes ---
+const darkTheme = {
+    background: 'transparent', // Important for wallpaper visibility
+    foreground: '#4af626',
+    cursor: '#4af626',
+    cursorAccent: '#1e1e1e',
+    selection: 'rgba(74, 246, 38, 0.3)',
+    black: '#1e1e1e',
+    red: '#ff5555',
+    green: '#4af626',
+    yellow: '#f1fa8c',
+    blue: '#6272a4',
+    magenta: '#ff79c6',
+    cyan: '#8be9fd',
+    white: '#f8f8f2',
+    brightBlack: '#6272a4',
+    brightRed: '#ff6e6e',
+    brightGreen: '#69ff94',
+    brightYellow: '#ffffa5',
+    brightBlue: '#d6acff',
+    brightMagenta: '#ff92df',
+    brightCyan: '#a4ffff',
+    brightWhite: '#ffffff'
+}
+
+const lightTheme = {
+    background: 'transparent', // Important for wallpaper visibility
+    foreground: '#2c3e50',
+    cursor: '#2c3e50',
+    cursorAccent: '#ffffff',
+    selection: 'rgba(44, 62, 80, 0.2)',
+    black: '#000000',
+    red: '#e74c3c',
+    green: '#27ae60',
+    yellow: '#f1c40f',
+    blue: '#2980b9',
+    magenta: '#8e44ad',
+    cyan: '#16a085',
+    white: '#ecf0f1',
+    brightBlack: '#7f8c8d',
+    brightRed: '#c0392b',
+    brightGreen: '#2ecc71',
+    brightYellow: '#f39c12',
+    brightBlue: '#3498db',
+    brightMagenta: '#9b59b6',
+    brightCyan: '#1abc9c',
+    brightWhite: '#ffffff'
+}
+
+const getPreferredTheme = () => {
+    const isDark = document.documentElement.classList.contains('dark') || 
+                   document.documentElement.getAttribute('data-theme') === 'dark'
+    return isDark ? darkTheme : lightTheme
+}
 
 // --- Terminal Functions ---
 const initTerminal = () => {
@@ -39,29 +106,7 @@ const initTerminal = () => {
         cursorBlink: true,
         fontSize: 14,
         fontFamily: "'JetBrains Mono', 'Consolas', 'Courier New', monospace",
-        theme: {
-            background: '#1e1e1e',
-            foreground: '#4af626',
-            cursor: '#4af626',
-            cursorAccent: '#1e1e1e',
-            selection: 'rgba(74, 246, 38, 0.3)',
-            black: '#1e1e1e',
-            red: '#ff5555',
-            green: '#4af626',
-            yellow: '#f1fa8c',
-            blue: '#6272a4',
-            magenta: '#ff79c6',
-            cyan: '#8be9fd',
-            white: '#f8f8f2',
-            brightBlack: '#6272a4',
-            brightRed: '#ff6e6e',
-            brightGreen: '#69ff94',
-            brightYellow: '#ffffa5',
-            brightBlue: '#d6acff',
-            brightMagenta: '#ff92df',
-            brightCyan: '#a4ffff',
-            brightWhite: '#ffffff'
-        },
+        theme: getPreferredTheme(),
         allowTransparency: true,
         scrollback: 1000
     })
@@ -212,24 +257,89 @@ const deleteScript = async (script) => {
     }
 }
 
-const runScript = (script) => {
+const runScript = async (script) => {
     if (!websocket || !isConnected.value) {
         ElMessage.warning('终端未连接，正在重连...')
         reconnectTerminal()
         return
     }
     
-    // 获取脚本完整路径并在终端中执行
+    // 显示运行对话框
+    runningScriptInfo.value = script
+    scriptInputs.value = ''
+    scriptParams.value = []
+    runDialogVisible.value = true
+    loadingScriptContent.value = true
+    
+    try {
+        // 获取脚本内容以分析参数
+        const res = await axios.get(`${API_BASE}/api/scripts/${script.id}`)
+        const content = res.data.script.content
+        
+        // 解析 input() 调用
+        // 匹配 input("prompt") 或 input('prompt')
+        const inputRegex = /input\s*\(\s*['"](.*?)['"]\s*\)/g
+        let match
+        const params = []
+        while ((match = inputRegex.exec(content)) !== null) {
+            params.push({
+                label: match[1] || `参数 ${params.length + 1}`,
+                value: ''
+            })
+        }
+        
+        scriptParams.value = params
+    } catch (e) {
+        console.error('Failed to analyze script inputs:', e)
+        ElMessage.warning('无法自动分析脚本参数，请手动输入')
+    } finally {
+        loadingScriptContent.value = false
+    }
+}
+
+const executeScript = () => {
+    if (!runningScriptInfo.value) return
+    
+    const script = runningScriptInfo.value
+    
+    // 聚焦终端
+    if (terminal) {
+        terminal.focus()
+    }
+    terminal.write('\r\n\x1b[1;36m▶ 运行: ' + script.name + '\x1b[0m\r\n\r\n')
+    
+    // 发送运行命令
     currentRunningScript.value = script.id
+    const scriptPath = `core/script/user_scripts/${script.id}.py`
     
-    // 使用相对路径执行脚本 (core/script/user_scripts/)
-    // 在终端的当前工作目录下执行
-    const cmd = `python core/script/user_scripts/${script.id}.py`
+    // 构造输入内容
+    let inputsToSend = ''
+    if (scriptParams.value.length > 0) {
+        // 如果有动态参数，拼接它们
+        inputsToSend = scriptParams.value.map(p => p.value).join('\n')
+    } else if (scriptInputs.value.trim()) {
+        // 否则使用手动输入框的内容
+        inputsToSend = scriptInputs.value.trim()
+    }
+    
+    let cmd
+    if (inputsToSend) {
+        // 使用 echo 管道传递输入，确保输入及时到达
+        // 处理单引号转义
+        const escapedInput = inputsToSend.replace(/'/g, "'\\''")
+        // 如果有多行输入，echo -e 并使用 \n
+        if (inputsToSend.includes('\n')) {
+             const multilines = inputsToSend.replace(/\n/g, '\\n')
+             cmd = `echo -e '${multilines}' | python ${scriptPath}`
+        } else {
+             cmd = `echo '${escapedInput}' | python ${scriptPath}`
+        }
+    } else {
+        cmd = `python ${scriptPath}`
+    }
+    
     websocket.send(`CMD:${cmd}`)
-    
-    setTimeout(() => {
-        currentRunningScript.value = null
-    }, 1000)
+    runDialogVisible.value = false
 }
 
 const clearTerminal = () => {
@@ -239,10 +349,49 @@ const clearTerminal = () => {
 }
 
 // --- Lifecycle ---
+let themeObserver = null
+
+const loadWallpaperSettings = () => {
+    const bg = localStorage.getItem('terminal_bg_image')
+    const opacity = localStorage.getItem('terminal_bg_opacity')
+    
+    terminalBgImage.value = bg || ''
+    terminalBgOpacity.value = opacity !== null ? parseFloat(opacity) : 0.3
+    
+    // Update CSS variables
+    if (bg) {
+        document.documentElement.style.setProperty('--terminal-bg-image', `url(${bg})`)
+        document.documentElement.style.setProperty('--terminal-opacity', terminalBgOpacity.value)
+    } else {
+        document.documentElement.style.removeProperty('--terminal-bg-image')
+    }
+}
+
 onMounted(() => {
     loadScripts()
     initTerminal()
+    loadWallpaperSettings()
     window.addEventListener('resize', handleResize)
+    
+    // Listen for storage changes (settings updates)
+    window.addEventListener('storage', loadWallpaperSettings)
+    
+    // Watch for theme changes
+    themeObserver = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && 
+                (mutation.attributeName === 'class' || mutation.attributeName === 'data-theme')) {
+                if (terminal) {
+                    terminal.options.theme = getPreferredTheme()
+                }
+            }
+        })
+    })
+    
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'data-theme']
+    })
 })
 
 onUnmounted(() => {
@@ -250,6 +399,10 @@ onUnmounted(() => {
     if (terminal) {
         terminal.dispose()
     }
+    if (themeObserver) {
+        themeObserver.disconnect()
+    }
+    window.removeEventListener('storage', loadWallpaperSettings)
     window.removeEventListener('resize', handleResize)
 })
 </script>
@@ -319,7 +472,11 @@ onUnmounted(() => {
             <div class="terminal-header">
                 <span>🖥️ 交互式终端 (Interactive Terminal)</span>
                 <div class="terminal-controls">
-                    <el-tag :type="isConnected ? 'success' : 'danger'" size="small">
+                    <el-tag 
+                        :class="['status-tag', isConnected ? 'status-connected' : 'status-disconnected']" 
+                        size="small"
+                        effect="dark"
+                    >
                         {{ isConnected ? '已连接' : '未连接' }}
                     </el-tag>
                     <el-button link size="small" @click="reconnectTerminal">
@@ -377,6 +534,83 @@ onUnmounted(() => {
             <template #footer>
                 <el-button @click="uploadDialogVisible = false">取消</el-button>
                 <el-button type="primary" @click="submitScript">上传</el-button>
+            </template>
+        </el-dialog>
+        
+        <!-- Run Script Dialog -->
+        <el-dialog
+            v-model="runDialogVisible"
+            title="运行脚本"
+            width="500px"
+            class="run-dialog"
+        >
+            <div class="run-dialog-content" v-loading="loadingScriptContent">
+                <!-- Header Card -->
+                <div class="script-header">
+                    <div class="header-icon">
+                        <el-icon><VideoPlay /></el-icon>
+                    </div>
+                    <div class="header-text">
+                        <div class="header-title">{{ runningScriptInfo?.name }}</div>
+                        <div class="header-desc">配置运行参数</div>
+                    </div>
+                </div>
+                
+                <!-- Dynamic Inputs -->
+                <div v-if="scriptParams.length > 0" class="params-container">
+                    <div 
+                        v-for="(param, index) in scriptParams" 
+                        :key="index" 
+                        class="param-item"
+                    >
+                        <div class="param-label">
+                            <el-icon><Key /></el-icon> {{ param.label }}
+                        </div>
+                        <el-input 
+                            v-model="param.value" 
+                            :placeholder="'请输入 ' + param.label"
+                            type="textarea"
+                            :rows="2"
+                            style="font-family: 'JetBrains Mono', monospace;"
+                        />
+                    </div>
+                    
+                    <el-alert
+                        title="参数将自动传递给脚本"
+                        type="info"
+                        show-icon
+                        :closable="false"
+                        class="info-alert"
+                    />
+                </div>
+                
+                <!-- Fallback Input -->
+                <div v-else class="manual-input">
+                    <div class="param-item">
+                        <div class="param-label">输入参数 (可选)</div>
+                        <el-input
+                            v-model="scriptInputs"
+                            type="textarea"
+                            :rows="3"
+                            placeholder="脚本未检测到 input() 调用，如果需要输入请在此手动键入...&#10;输入后将自动发送到终端"
+                            style="font-family: 'JetBrains Mono', monospace;"
+                        />
+                    </div>
+                    <el-alert
+                        title="留空则直接运行，可在终端中交互"
+                        type="warning"
+                        show-icon
+                        :closable="false"
+                        class="info-alert"
+                    />
+                </div>
+            </div>
+            <template #footer>
+                <el-button @click="runDialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="executeScript">
+                    <el-icon><VideoPlay /></el-icon>
+                    运行
+                </el-button>
             </template>
         </el-dialog>
     </div>
@@ -535,23 +769,35 @@ onUnmounted(() => {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: #1e1e1e;
+    background: var(--terminal-bg, #1e1e1e);
     border-radius: 12px;
     border: 1px solid var(--border-color);
     overflow: hidden;
     min-height: 250px;
+    transition: background-color 0.3s;
 }
 
 .terminal-header {
-    background: #2d2d2d;
+    background: var(--terminal-header-bg, #2d2d2d);
     padding: 8px 16px;
     font-size: 12px;
     font-weight: bold;
-    color: #ccc;
+    color: var(--el-text-color-secondary);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid #3c3c3c;
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.3s;
+}
+
+:global([data-theme="light"]) .terminal-section {
+    --terminal-bg: #ffffff;
+    --terminal-header-bg: #f8f9fa;
+}
+
+:global(.dark) .terminal-section {
+    --terminal-bg: #1e1e1e;
+    --terminal-header-bg: #2d2d2d;
 }
 
 .terminal-controls {
@@ -560,10 +806,61 @@ onUnmounted(() => {
     gap: 12px;
 }
 
+.status-tag {
+    border: none !important;
+    font-weight: bold !important;
+    color: #fff !important;
+}
+
+.status-connected {
+    background-color: #67c23a !important;
+    box-shadow: 0 0 8px rgba(103, 194, 58, 0.6), 0 0 15px rgba(103, 194, 58, 0.4) !important;
+    animation: glow-green 2s infinite alternate;
+}
+
+.status-disconnected {
+    background-color: #f56c6c !important;
+    box-shadow: 0 0 8px rgba(245, 108, 108, 0.6), 0 0 15px rgba(245, 108, 108, 0.4) !important;
+    animation: glow-red 2s infinite alternate;
+}
+
+@keyframes glow-green {
+    from { box-shadow: 0 0 4px rgba(103, 194, 58, 0.6), 0 0 8px rgba(103, 194, 58, 0.4); }
+    to { box-shadow: 0 0 10px rgba(103, 194, 58, 0.8), 0 0 20px rgba(103, 194, 58, 0.6); }
+}
+
+@keyframes glow-red {
+    from { box-shadow: 0 0 4px rgba(245, 108, 108, 0.6), 0 0 8px rgba(245, 108, 108, 0.4); }
+    to { box-shadow: 0 0 10px rgba(245, 108, 108, 0.8), 0 0 20px rgba(245, 108, 108, 0.6); }
+}
+
 .terminal-body {
     flex: 1;
     padding: 8px;
     overflow: hidden;
+    position: relative;
+    z-index: 1;
+}
+
+/* Background Image Overlay */
+.terminal-body::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: var(--terminal-bg-image, none);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: var(--terminal-opacity, 0.3);
+    z-index: -1;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+/* Ensure xterm background is transparent so image shows through */
+.terminal-body :deep(.xterm),
+.terminal-body :deep(.xterm-viewport) {
+    background-color: transparent !important;
 }
 
 /* Upload Dialog Styles */
@@ -578,5 +875,90 @@ onUnmounted(() => {
 
 .terminal-body :deep(.xterm-viewport) {
     overflow-y: auto !important;
+}
+
+/* Run Dialog Styles */
+/* Run Dialog Styles */
+.run-dialog-content {
+    padding: 4px 0;
+}
+
+.script-header {
+    background: var(--el-fill-color-light);
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid var(--border-color);
+}
+
+.header-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--el-color-primary-light-9);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: var(--el-color-primary);
+}
+
+.header-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+}
+
+.header-desc {
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+    margin-top: 2px;
+}
+
+.video-play-icon {
+    font-size: 24px;
+    color: var(--el-color-primary);
+}
+
+.params-container, .manual-input {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.param-item {
+    background: var(--el-bg-color-overlay);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s;
+}
+
+.param-item:focus-within {
+    border-color: var(--el-color-primary);
+    box-shadow: 0 0 0 2px var(--el-color-primary-light-8);
+}
+
+.param-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+}
+
+.info-alert {
+    margin-top: 8px;
+}
+
+:deep(.run-dialog .el-dialog__body) {
+    padding-top: 10px;
 }
 </style>
