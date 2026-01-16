@@ -1,6 +1,11 @@
 
 const { app, BrowserWindow } = require('electron')
 const path = require('path')
+
+// Disable sandbox to allow running as root. 
+// This is necessary because Chrome/Electron does not support running as root without it.
+app.commandLine.appendSwitch('no-sandbox')
+app.commandLine.appendSwitch('disable-setuid-sandbox')
 const { spawn } = require('child_process')
 const fs = require('fs')
 

@@ -7,9 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "electron:dev": "vite build && electron .",
+    "electron:dev": "vite build && electron . --no-sandbox",
     "electron:build": "vite build && electron-builder",
-    "start": "electron ."
+    "start": "electron . --no-sandbox"
   },
   "keywords": [],
   "author": "QAQ",
