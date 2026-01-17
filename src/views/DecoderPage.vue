@@ -27,7 +27,16 @@ const palette = [
         { id: 'html_encode', label: 'HTML 编码' }, { id: 'html_decode', label: 'HTML 解码' },
         { id: 'unicode_encode', label: 'Unicode 编码' }, { id: 'unicode_decode', label: 'Unicode 解码' },
     ]},
+    { category: '哈希 / 摘要', ops: [
+        { id: 'md5_hash', label: 'MD5 哈希', params: { output_format: 'hex' } },
+    ]},
     { category: '加密 / 解密', ops: [
+        { id: 'rc4_encrypt', label: 'RC4 加密', params: { key: 'secret', key_type: 'utf-8', swap_bytes: false, sbox_name: 'Standard RC4' } },
+        { id: 'rc4_decrypt', label: 'RC4 解密', params: { key: 'secret', key_type: 'utf-8', swap_bytes: false, sbox_name: 'Standard RC4' } },
+        { id: 'des_encrypt', label: 'DES 加密', params: { key: '12345678', mode: 'ECB', padding: 'pkcs7', key_type: 'utf-8', iv_type: 'utf-8' } },
+        { id: 'des_decrypt', label: 'DES 解密', params: { key: '12345678', mode: 'ECB', padding: 'pkcs7', key_type: 'utf-8', iv_type: 'utf-8' } },
+        { id: 'triple_des_encrypt', label: '3DES 加密', params: { key: '123456781234567812345678', mode: 'ECB', padding: 'pkcs7', key_type: 'utf-8', iv_type: 'utf-8' } },
+        { id: 'triple_des_decrypt', label: '3DES 解密', params: { key: '123456781234567812345678', mode: 'ECB', padding: 'pkcs7', key_type: 'utf-8', iv_type: 'utf-8' } },
         { id: 'aes_encrypt', label: 'AES 加密', params: { key: '1234567890123456', iv: '', mode: 'CBC', padding: 'pkcs7', sbox_name: 'Standard AES', key_type: 'utf-8', iv_type: 'utf-8', swap_key_schedule: false, swap_data_round: false } },
         { id: 'aes_decrypt', label: 'AES 解密', params: { key: '1234567890123456', iv: '', mode: 'CBC', padding: 'pkcs7', sbox_name: 'Standard AES', key_type: 'utf-8', iv_type: 'utf-8', swap_key_schedule: false, swap_data_round: false } },
         { id: 'sm4_encrypt', label: 'SM4 加密', params: { key: '1234567890123456', iv: '', mode: 'ECB', padding: 'pkcs7', sbox_name: 'Standard SM4', key_type: 'utf-8', iv_type: 'utf-8', swap_key_schedule: false, swap_data_round: false } },
@@ -70,7 +79,7 @@ const executeRecipe = async () => {
         // Smart Input Handling for Crypto Ops (Pass Hex directly)
         if (inputFormat.value === 'HEX' && recipe.value.length > 0) {
             const firstOpId = recipe.value[0].id
-            const cryptoOps = ['aes_encrypt', 'aes_decrypt', 'sm4_encrypt', 'sm4_decrypt']
+            const cryptoOps = ['aes_encrypt', 'aes_decrypt', 'sm4_encrypt', 'sm4_decrypt', 'des_encrypt', 'des_decrypt', 'triple_des_encrypt', 'triple_des_decrypt', 'rc4_encrypt', 'rc4_decrypt']
             if (cryptoOps.includes(firstOpId)) {
                 skipConversion = true
                 // Do not convert, pass raw Hex string
@@ -228,6 +237,13 @@ onMounted(() => {
                                             <el-option v-for="p in ['pkcs7', 'zeropadding', 'iso10126', 'ansix923', 'nopadding']" :key="p" :label="p" :value="p" />
                                         </el-select>
                                     </div>
+                                    <div v-if="element.params.output_format !== undefined" class="param-row">
+                                        <span class="param-label">Format:</span>
+                                        <el-select v-model="element.params.output_format" size="small" style="width: 100%">
+                                            <el-option label="HEX" value="hex" />
+                                            <el-option label="Base64" value="base64" />
+                                        </el-select>
+                                    </div>
                                     <div v-if="element.params.sbox_name !== undefined" class="param-row">
                                         <span class="param-label">S-Box:</span>
                                         <el-select v-model="element.params.sbox_name" size="small" style="width: 100%">
@@ -240,9 +256,15 @@ onMounted(() => {
                                     <div v-if="element.params.swap_data_round !== undefined" class="param-row">
                                         <el-checkbox v-model="element.params.swap_data_round" label="Swap Data Round (Magic)" size="small" />
                                     </div>
+                                    <div v-if="element.params.swap_bytes !== undefined" class="param-row">
+                                        <el-checkbox v-model="element.params.swap_bytes" label="Swap Bytes (Magic RC4)" size="small" />
+                                    </div>
                                     <div v-if="element.id.startsWith('sm4') || element.id.startsWith('aes')" class="hint-text" style="font-size: 11px; color: #909399; margin-top: 4px; line-height: 1.4;">
                                         <div v-if="element.params.swap_key_schedule">ℹ️ Swap Key: 在密钥扩展阶段交换S盒输出 (字节序翻转)</div>
                                         <div v-if="element.params.swap_data_round">ℹ️ Swap Data: 在加密轮函数中交换S盒输出/列 (字节序翻转)</div>
+                                    </div>
+                                    <div v-if="element.id.startsWith('rc4') && element.params.swap_bytes" class="hint-text" style="font-size: 11px; color: #909399; margin-top: 4px; line-height: 1.4;">
+                                        <div>ℹ️ Swap Bytes: KSA阶段交换S盒元素时改变异或逻辑</div>
                                     </div>
                                 </div>
                             </el-card>

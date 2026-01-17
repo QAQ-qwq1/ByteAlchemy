@@ -283,7 +283,7 @@ onMounted(() => {
                 </div>
             </template>
 
-            <div class="sbox-editor-wrapper" :class="{ collapsed: !isAppearanceExpanded }" style="max-height: 500px">
+            <div class="sbox-editor-wrapper" :class="{ collapsed: !isAppearanceExpanded }">
                 <div class="appearance-editor">
                     <div class="setting-item">
                         <div class="setting-label">背景图片 (Wallpaper)</div>
@@ -360,6 +360,12 @@ h1 {
     background-color: var(--panel-bg);
     border-color: var(--border-color);
     margin-bottom: 24px;
+    transition: all 0.3s ease;
+}
+
+.section-card:hover {
+    box-shadow: 0 0 15px var(--accent-color);
+    border-color: var(--accent-color);
 }
 
 .section-header {
@@ -505,6 +511,11 @@ h1 {
     max-height: 300px;
 }
 
+:global(.dark) .grid-container {
+    background: #151217; /* Darker shade of bg #1C191F */
+    border-color: var(--border-color);
+}
+
 .grid-cell {
     aspect-ratio: 1;
     display: flex;
@@ -514,6 +525,11 @@ h1 {
     background: var(--el-bg-color);
     color: var(--text-color);
     cursor: default;
+}
+
+:global(.dark) .grid-cell {
+    background: #2B2530; /* panel-bg */
+    color: var(--text-color);
 }
 
 .grid-cell:hover {

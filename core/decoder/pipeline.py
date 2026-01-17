@@ -201,3 +201,105 @@ def sm4_decrypt(data, params):
 # GUI 可通过 OPERATION_REGISTRY.keys() 获取所有操作名
 # 并通过 Pipeline 组合操作链
 
+# DES/3DES加解密
+from core.decoder.des import DESEncoders
+
+@register_operation('des_encrypt')
+def des_encrypt(data, params):
+    key = params.get('key', '')
+    mode = params.get('mode', 'ECB')
+    iv = params.get('iv', '')
+    padding = params.get('padding', 'pkcs7')
+    sboxes = params.get('sboxes')
+    val_key_type = params.get('key_type', 'utf-8')
+    val_iv_type = params.get('iv_type', 'utf-8')
+    val_data_type = params.get('data_type')
+    
+    return DESEncoders.des_encrypt(data, key, mode, iv, padding, sboxes=sboxes,
+                                   key_type=val_key_type, iv_type=val_iv_type,
+                                   data_type=val_data_type)
+
+@register_operation('des_decrypt')
+def des_decrypt(data, params):
+    key = params.get('key', '')
+    mode = params.get('mode', 'ECB')
+    iv = params.get('iv', '')
+    padding = params.get('padding', 'pkcs7')
+    sboxes = params.get('sboxes')
+    val_key_type = params.get('key_type', 'utf-8')
+    val_iv_type = params.get('iv_type', 'utf-8')
+    val_data_type = params.get('data_type')
+    
+    return DESEncoders.des_decrypt(data, key, mode, iv, padding, sboxes=sboxes,
+                                   key_type=val_key_type, iv_type=val_iv_type,
+                                   data_type=val_data_type)
+
+@register_operation('triple_des_encrypt')
+def triple_des_encrypt(data, params):
+    key = params.get('key', '')
+    mode = params.get('mode', 'ECB')
+    iv = params.get('iv', '')
+    padding = params.get('padding', 'pkcs7')
+    sboxes = params.get('sboxes')
+    val_key_type = params.get('key_type', 'utf-8')
+    val_iv_type = params.get('iv_type', 'utf-8')
+    val_data_type = params.get('data_type')
+    
+    return DESEncoders.triple_des_encrypt(data, key, mode, iv, padding, sboxes=sboxes,
+                                          key_type=val_key_type, iv_type=val_iv_type,
+                                          data_type=val_data_type)
+
+@register_operation('triple_des_decrypt')
+def triple_des_decrypt(data, params):
+    key = params.get('key', '')
+    mode = params.get('mode', 'ECB')
+    iv = params.get('iv', '')
+    padding = params.get('padding', 'pkcs7')
+    sboxes = params.get('sboxes')
+    val_key_type = params.get('key_type', 'utf-8')
+    val_iv_type = params.get('iv_type', 'utf-8')
+    val_data_type = params.get('data_type')
+    
+    return DESEncoders.triple_des_decrypt(data, key, mode, iv, padding, sboxes=sboxes,
+                                          key_type=val_key_type, iv_type=val_iv_type,
+                                          data_type=val_data_type)
+
+# MD5哈希
+from core.decoder.md5 import MD5Encoders
+
+@register_operation('md5_hash')
+def md5_hash(data, params):
+    output_format = params.get('output_format', 'hex')
+    init_values = params.get('init_values')
+    k_table = params.get('k_table')
+    shifts = params.get('shifts')
+    val_data_type = params.get('data_type')
+    
+    return MD5Encoders.md5_hash(data, output_format=output_format,
+                                init_values=init_values, k_table=k_table,
+                                shifts=shifts, data_type=val_data_type)
+
+# RC4流密码
+from core.decoder.rc4 import RC4Encoders
+
+@register_operation('rc4_encrypt')
+def rc4_encrypt(data, params):
+    key = params.get('key', '')
+    swap_bytes = params.get('swap_bytes', False)
+    sbox = params.get('sbox')
+    val_key_type = params.get('key_type', 'utf-8')
+    val_data_type = params.get('data_type')
+    
+    return RC4Encoders.rc4_encrypt(data, key, swap_bytes=swap_bytes, sbox=sbox,
+                                   key_type=val_key_type, data_type=val_data_type)
+
+@register_operation('rc4_decrypt')
+def rc4_decrypt(data, params):
+    key = params.get('key', '')
+    swap_bytes = params.get('swap_bytes', False)
+    sbox = params.get('sbox')
+    val_key_type = params.get('key_type', 'utf-8')
+    val_data_type = params.get('data_type')
+    
+    return RC4Encoders.rc4_decrypt(data, key, swap_bytes=swap_bytes, sbox=sbox,
+                                   key_type=val_key_type, data_type=val_data_type)

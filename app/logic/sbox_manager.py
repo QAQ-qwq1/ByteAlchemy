@@ -44,6 +44,8 @@ class SBoxManager:
         0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16
     ]
 
+    STANDARD_RC4_SBOX = list(range(256))
+
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(SBoxManager, cls).__new__(cls)
@@ -58,7 +60,8 @@ class SBoxManager:
         """加载S盒配置"""
         sboxes = {
             "Standard SM4": self.STANDARD_SBOX,
-            "Standard AES": self.STANDARD_AES_SBOX
+            "Standard AES": self.STANDARD_AES_SBOX,
+            "Standard RC4": self.STANDARD_RC4_SBOX
         }
         if os.path.exists(self.config_path):
             try:
@@ -71,7 +74,7 @@ class SBoxManager:
 
     def save_sboxes(self):
         """保存自定义S盒"""
-        custom_sboxes = {k: v for k, v in self.sboxes.items() if k != "Standard SM4" and k != "Standard AES"}
+        custom_sboxes = {k: v for k, v in self.sboxes.items() if k not in ["Standard SM4", "Standard AES", "Standard RC4"]}
         try:
             with open(self.config_path, 'w', encoding='utf-8') as f:
                 json.dump(custom_sboxes, f, indent=4)
@@ -85,14 +88,14 @@ class SBoxManager:
     def get_sbox(self, name: str) -> List[int]:
         """获取指定S盒"""
         # Lazy reload check: If name is custom but not in memory, try reload?
-        if name not in self.sboxes and name not in ["Standard SM4", "Standard AES"]:
+        if name not in self.sboxes and name not in ["Standard SM4", "Standard AES", "Standard RC4"]:
              self._init() # Reload config
              
         return self.sboxes.get(name, self.STANDARD_SBOX)
 
     def add_sbox(self, name: str, sbox: List[int]) -> bool:
         """添加S盒"""
-        if name in self.sboxes and (name == "Standard SM4" or name == "Standard AES"):
+        if name in self.sboxes and name in ["Standard SM4", "Standard AES", "Standard RC4"]:
             return False # Cannot overwrite standard
         self.sboxes[name] = sbox
         self.save_sboxes()
@@ -100,7 +103,7 @@ class SBoxManager:
 
     def remove_sbox(self, name: str) -> bool:
         """删除S盒"""
-        if name == "Standard SM4" or name == "Standard AES":
+        if name in ["Standard SM4", "Standard AES", "Standard RC4"]:
             return False
         if name in self.sboxes:
             del self.sboxes[name]

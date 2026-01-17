@@ -304,6 +304,124 @@ def sm4_decrypt(req: Sm4Request):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+# --- DES ---
+from core.decoder.des import DESEncoders
+
+class DesRequest(BaseModel):
+    data: str
+    key: str
+    mode: str = 'ECB'
+    iv: str = ''
+    padding: str = 'pkcs7'
+    sboxes: Optional[str] = None  # JSON string of 8 S-boxes
+    key_type: str = 'utf-8'
+    iv_type: str = 'utf-8'
+    data_type: Optional[str] = None
+
+@app.post("/api/des/encrypt")
+def des_encrypt(req: DesRequest):
+    try:
+        result = DESEncoders.des_encrypt(req.data, req.key, req.mode, req.iv, req.padding,
+                                         sboxes=req.sboxes, key_type=req.key_type,
+                                         iv_type=req.iv_type, data_type=req.data_type)
+        return {"result": result}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/des/decrypt")
+def des_decrypt(req: DesRequest):
+    try:
+        result = DESEncoders.des_decrypt(req.data, req.key, req.mode, req.iv, req.padding,
+                                         sboxes=req.sboxes, key_type=req.key_type,
+                                         iv_type=req.iv_type, data_type=req.data_type)
+        return {"result": result}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# --- 3DES ---
+class TripleDesRequest(BaseModel):
+    data: str
+    key: str
+    mode: str = 'ECB'
+    iv: str = ''
+    padding: str = 'pkcs7'
+    sboxes: Optional[str] = None
+    key_type: str = 'utf-8'
+    iv_type: str = 'utf-8'
+    data_type: Optional[str] = None
+
+@app.post("/api/3des/encrypt")
+def triple_des_encrypt(req: TripleDesRequest):
+    try:
+        result = DESEncoders.triple_des_encrypt(req.data, req.key, req.mode, req.iv, req.padding,
+                                                sboxes=req.sboxes, key_type=req.key_type,
+                                                iv_type=req.iv_type, data_type=req.data_type)
+        return {"result": result}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/3des/decrypt")
+def triple_des_decrypt(req: TripleDesRequest):
+    try:
+        result = DESEncoders.triple_des_decrypt(req.data, req.key, req.mode, req.iv, req.padding,
+                                                sboxes=req.sboxes, key_type=req.key_type,
+                                                iv_type=req.iv_type, data_type=req.data_type)
+        return {"result": result}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# --- MD5 ---
+from core.decoder.md5 import MD5Encoders
+
+class Md5Request(BaseModel):
+    data: str
+    output_format: str = 'hex'  # 'hex' or 'base64'
+    init_values: Optional[str] = None  # JSON or comma-separated hex
+    k_table: Optional[str] = None  # JSON array of 64 values
+    shifts: Optional[str] = None  # JSON array of 64 values
+    data_type: Optional[str] = None
+
+@app.post("/api/md5/hash")
+def md5_hash(req: Md5Request):
+    try:
+        result = MD5Encoders.md5_hash(req.data, output_format=req.output_format,
+                                      init_values=req.init_values, k_table=req.k_table,
+                                      shifts=req.shifts, data_type=req.data_type)
+        return {"result": result}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# --- RC4 ---
+from core.decoder.rc4 import RC4Encoders
+
+class Rc4Request(BaseModel):
+    data: str
+    key: str
+    swap_bytes: bool = False
+    sbox: Optional[str] = None  # Custom initial S-box
+    key_type: str = 'utf-8'
+    data_type: Optional[str] = None
+
+@app.post("/api/rc4/encrypt")
+def rc4_encrypt(req: Rc4Request):
+    try:
+        result = RC4Encoders.rc4_encrypt(req.data, req.key, swap_bytes=req.swap_bytes,
+                                         sbox=req.sbox, key_type=req.key_type,
+                                         data_type=req.data_type)
+        return {"result": result}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/rc4/decrypt")
+def rc4_decrypt(req: Rc4Request):
+    try:
+        result = RC4Encoders.rc4_decrypt(req.data, req.key, swap_bytes=req.swap_bytes,
+                                         sbox=req.sbox, key_type=req.key_type,
+                                         data_type=req.data_type)
+        return {"result": result}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 # --- HTML / URL / Unicode ---
 @app.post("/api/html/encode")
 def html_encode(req: EncodeRequest):
@@ -385,7 +503,7 @@ def get_sbox(name: str):
     sbox = sbox_manager.get_sbox(name)
     # Return as hex string for editor convenience
     sbox_hex = ' '.join([f'{b:02x}' for b in sbox])
-    return {"name": name, "content": sbox_hex, "is_standard": (name in ["Standard SM4", "Standard AES"])}
+    return {"name": name, "content": sbox_hex, "is_standard": (name in ["Standard SM4", "Standard AES", "Standard RC4"])}
 
 @app.post("/api/sbox/save")
 def save_sbox(req: SBoxSaveRequest):
