@@ -18,7 +18,7 @@ function createWindow() {
     mainWindow = new BrowserWindow({
         width: 1400,
         height: 900,
-        backgroundColor: '#1C191F', // Deep purple background to match SiUI
+        backgroundColor: '#fdf2f8', // Light pink gradient start
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
@@ -26,17 +26,18 @@ function createWindow() {
         },
     })
 
-    // Load the app
-    // For this refactor, we prioritize loading from the built dist folder
-    // to ensure the user gets the native GUI experience immediately.
-    const indexPath = path.join(__dirname, '../dist/index.html')
+    // Always load from React frontend
+    const indexPath = path.join(__dirname, '../front/dist/index.html')
+
+    console.log(`>>> ByteAlchemy <<<`)
+    console.log(`Loading: ${indexPath}`)
 
     if (isDev && process.env.VITE_DEV_SERVER_URL) {
         mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL)
         mainWindow.webContents.openDevTools()
     } else {
         mainWindow.loadFile(indexPath).catch(() => {
-            console.error('Failed to load index.html. Have you run npm run build?')
+            console.error(`Failed to load: ${indexPath}`)
         })
     }
 }
@@ -99,7 +100,12 @@ function startBackend() {
 }
 
 app.whenReady().then(() => {
-    startBackend()
+    // Skip backend start if launched from run.py (run.py already starts the backend)
+    if (process.env.SKIP_ELECTRON_BACKEND !== '1') {
+        startBackend()
+    } else {
+        console.log('Skipping backend start (launched from run.py)')
+    }
     createWindow()
 
     app.on('activate', () => {

@@ -5,6 +5,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional
+from fastapi.responses import JSONResponse
 
 # Ensure core modules are in path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -620,6 +621,129 @@ def run_script_stream(script_id: str):
             "Connection": "keep-alive"
         }
     )
+
+
+# ==================== Key Reconstruction API ====================
+try:
+    from importlib import import_module
+    key_recreat_blocks = import_module("core.key_recreat.blocks")
+    key_recreat_generator = import_module("core.key_recreat.generator")
+    key_recreat_custom = import_module("core.key_recreat.custom_blocks")
+except ImportError as e:
+    key_recreat_blocks = None
+    key_recreat_generator = None
+    key_recreat_custom = None
+    print(f"Failed to import key reconstruction modules: {e}")
+
+
+class KeyBlockChain(BaseModel):
+    blocks: List[Dict[str, Any]]
+    func_name: str = "transform_key"
+    args: str = "data"
+
+
+class KeyExecuteRequest(BaseModel):
+    code: str
+    input_hex: str = ""
+
+
+@app.get("/api/key-blocks")
+def get_key_blocks():
+    """获取所有积木块定义"""
+    if key_recreat_blocks is None:
+        raise HTTPException(status_code=500, detail="Key reconstruction module not loaded")
+    
+    blocks_data = key_recreat_blocks.get_all_blocks()
+    
+    # Inject sbox list into options where needed
+    # (Existing logic...)
+    
+    # Also add names needed for Select params
+    blocks_data["sbox_list"] = sbox_manager.get_all_names()
+
+    return JSONResponse(blocks_data)
+
+@app.post("/api/key-blocks/custom")
+async def save_custom_block_endpoint(request: Request):
+    if key_recreat_custom is None:
+        raise HTTPException(status_code=500, detail="Custom blocks module not loaded")
+    
+    try:
+        data = await request.json()
+        block_id = data.get("block_id")
+        block_def = data.get("block_def")
+        
+        if not block_id or not block_def:
+            raise HTTPException(status_code=400, detail="Missing block_id or block_def")
+            
+        success = key_recreat_custom.save_custom_block(block_id, block_def)
+        return JSONResponse({"success": success})
+    except Exception as e:
+        print(f"Error saving custom block: {e}")
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+@app.delete("/api/key-blocks/custom/{block_id}")
+async def delete_custom_block_endpoint(block_id: str):
+    if key_recreat_custom is None:
+        raise HTTPException(status_code=500, detail="Custom blocks module not loaded")
+    
+    try:
+        success = key_recreat_custom.delete_custom_block(block_id)
+        return JSONResponse({"success": success})
+    except Exception as e:
+        print(f"Error deleting custom block: {e}")
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+
+@app.post("/api/key-generate")
+def generate_key_code(request: KeyBlockChain):
+    """根据积木配置生成代码"""
+    if key_recreat_generator is None:
+        raise HTTPException(status_code=500, detail="Key reconstruction module not loaded")
+    
+    try:
+        code = key_recreat_generator.generate_function(
+            func_name=request.func_name,
+            block_chain=request.blocks,
+            args=request.args
+        )
+        return {"code": code}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/key-parse")
+async def parse_key_code_endpoint(request: Request):
+    try:
+        data = await request.json()
+        code = data.get("code", "")
+        if not code:
+            return JSONResponse({"success": False, "error": "Code is empty"})
+            
+        from core.key_recreat.blocks import get_all_blocks
+        from core.key_recreat.parser import parse_code_to_blocks
+        
+        blocks_def = get_all_blocks()["blocks"]
+        chain = parse_code_to_blocks(code, blocks_def)
+        
+        return JSONResponse({"success": True, "chain": chain})
+    except Exception as e:
+        print(f"Error parsing code: {e}")
+        return JSONResponse({"success": False, "error": str(e)})
+
+@app.post("/api/key-execute")
+
+def execute_key_code(request: KeyExecuteRequest):
+    """执行生成的代码"""
+    if key_recreat_generator is None:
+        raise HTTPException(status_code=500, detail="Key reconstruction module not loaded")
+    
+    try:
+        input_data = bytes.fromhex(request.input_hex) if request.input_hex else b""
+        result = key_recreat_generator.execute_code(request.code, input_data)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 if __name__ == "__main__":
     # Electron will likely spawn this process. 

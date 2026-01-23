@@ -1,13 +1,44 @@
-node_modules
-.venv
-build
-release
-python-dist
-python-dist/
-build/
-*.spec
-releasenote.md
+# Dependencies
+node_modules/
+.venv/
 __pycache__/
 *.pyc
+*.pyo
+
+# Build outputs
+build/
+release/
+python-dist/
+*.spec
+
+# Frontend build (will be rebuilt)
+front/node_modules/
+front/dist/
+
+# Old dist folder
+dist/
+
+# User data
 core/script/user_scripts/*
+!core/script/user_scripts/.gitkeep
+app/sboxes.json
+
+# IDE & Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.~lock.*
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Project files
+releasenote.md
 PROJECT_INTRO.md
+新建 文本文档.txt
+
+# Gemini artifacts
+.gemini/

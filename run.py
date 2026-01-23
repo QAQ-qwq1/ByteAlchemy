@@ -2,16 +2,13 @@ import os
 import sys
 import subprocess
 import time
-import signal
-import threading
-import socket
 import psutil
 
 def kill_process_on_port(port):
     """如果端口被占用，尝试杀掉占用端口的进程"""
     for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
         try:
-            for conn in proc.connections(kind='inet'):
+            for conn in proc.net_connections(kind='inet'):
                 if conn.laddr.port == port:
                     print(f"Port {port} is in use by {proc.info['name']} (PID: {proc.info['pid']}). Killing...")
                     proc.kill()
@@ -21,13 +18,13 @@ def kill_process_on_port(port):
 
 def run():
     # 0. Pre-start cleanup
-    print("Checking ports...")
+    print("检查端口...")
     kill_process_on_port(3335)  # Backend
     kill_process_on_port(3336)  # Terminal
     
     # 1. Start Backend
-    print("Starting backend...")
-    base_dir = os.path.dirname(__file__)
+    print("启动后端服务...")
+    base_dir = os.path.dirname(os.path.abspath(__file__))
     is_windows = sys.platform.startswith('win')
 
     if is_windows:
@@ -42,26 +39,43 @@ def run():
     backend_proc = subprocess.Popen([python_exe, backend_script])
 
     # 1.5. Start Terminal WebSocket Server
-    print("Starting terminal server...")
+    print("启动终端服务...")
     terminal_script = os.path.join(base_dir, "core", "script", "terminal_server.py")
     terminal_proc = subprocess.Popen([python_exe, terminal_script])
 
     # 2. Wait for servers to start
     time.sleep(2)
 
-    # 3. Start Frontend (Electron)
-    print("Starting frontend...")
+    npm_cmd = "npm.cmd" if is_windows else "npm"
+    front_dir = os.path.join(base_dir, "front")
+    
+    # 3. Build Frontend
+    print("=" * 40)
+    print(">>> ByteAlchemy <<<")
+    print("=" * 40)
+    print("构建前端...")
+    
+    build_proc = subprocess.run([npm_cmd, "run", "build"], cwd=front_dir)
+    if build_proc.returncode != 0:
+        print("前端构建失败!")
+        backend_proc.terminate()
+        terminal_proc.terminate()
+        return
+    
+    # 4. Start Electron
+    print("启动应用...")
+    env = os.environ.copy()
+    env["SKIP_ELECTRON_BACKEND"] = "1"  # run.py already started backend
+    frontend_proc = subprocess.Popen([npm_cmd, "run", "start"], cwd=base_dir, env=env)
+    
     try:
-        npm_cmd = "npm.cmd" if is_windows else "npm"
-        frontend_proc = subprocess.Popen([npm_cmd, "run", "start"], cwd=base_dir)
-        
         # Monitor processes
         while True:
             if backend_proc.poll() is not None:
-                print("Backend exited unexpectedly.")
+                print("后端异常退出。")
                 break
             if terminal_proc.poll() is not None:
-                print("Terminal server exited unexpectedly.")
+                print("终端服务异常退出。")
                 break
             if frontend_proc.poll() is not None:
                 # Frontend closed, normal exit
@@ -69,10 +83,10 @@ def run():
             time.sleep(1)
             
     except KeyboardInterrupt:
-        print("\nStopping...")
+        print("\n正在停止...")
     finally:
         # Cleanup
-        print("Cleaning up processes...")
+        print("清理进程...")
         
         if 'backend_proc' in locals() and backend_proc.poll() is None:
             backend_proc.terminate()
